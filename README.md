@@ -31,7 +31,7 @@ Connecting discovered devices to network "<mywifinetworkname>"
 
 ```
 
-I have tested it with WeMo Insight and WeMo Bridge.
+I have tested it with WeMo Insight and WeMo Bridge. Works on Windows too.
 
 # TODO
  - support getting end devices
