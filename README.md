@@ -13,8 +13,9 @@ Discovering WeMo devices
 Discovered:
  - WeMo Bridge (10.22.22.1:49152)
 ```
- 
-
+  
+    
+<br/>
 
 > $ python wemosetup.py connecthomenetwork --ssid <mywifinetworkname> --password <mywifinetworkpassword>
 
