@@ -2,7 +2,7 @@
 A simple Python script to setup WeMo devices supporting:
  - connecting to a home Wi-Fi network (via calling a SOAP method ConnectHomeNetwork)
  - showing a list of discovered devices (via SSDP)
- - works on Windows too
+ - working on Windows too
 
 I have tested it with WeMo Insight and WeMo Bridge.
 
