@@ -1,3 +1,4 @@
+# wemosetup
 A simple Python script to setup WeMo devices.
 
 Supported:
