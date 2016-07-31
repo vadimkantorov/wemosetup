@@ -6,15 +6,21 @@ Supported:
  - showing a list of discovered devices
 
 Examples:
-```$ python wemosetup.py discover
 
+> $ python wemosetup.py discover
+
+```
 Discovering WeMo devices
 
 Discovered:
- - WeMo Bridge (10.22.22.1:49152)```
+ - WeMo Bridge (10.22.22.1:49152)
+```
+ 
 
- ```$ python wemosetup.py connecthomenetwork --ssid <mywifinetworkname> --password <mywifinetworkpassword>
 
+> $ python wemosetup.py connecthomenetwork --ssid <mywifinetworkname> --password <mywifinetworkpassword>
+
+```
 Discovering WeMo devices
 
 Discovered:
@@ -25,8 +31,6 @@ Connecting discovered devices to network "<mywifinetworkname>"
  - WeMo Bridge (10.22.22.1:49152) ... [ok]
 
 ```
-
-
 
 I have tested it with WeMo Insight and WeMo Bridge.
 
