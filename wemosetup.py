@@ -30,13 +30,13 @@ class Device:
   </u:%s>
  </s:Body>
 </s:Envelope>''' % (method_name, service_type, ''.join(itertools.starmap('<{0}>{1}</{0}>'.format, args.items())), method_name)
-		headers = {
+		request_headers = {
 			'Content-Type' : 'text/xml; charset="utf-8"',
 			'SOAPACTION' : '"%s#%s"' % (service_type, method_name),
 			'Content-Length': len(request_body),
 			'HOST' : self.host
 		}
-		response = urllib2.urlopen(urllib2.Request(service_url, request_body, headers = headers), timeout = 30).read()
+		response = urllib2.urlopen(urllib2.Request(service_url, request_body, headers = request_headers), timeout = 30).read()
 		if response_tag:
 			response = xml.dom.minidom.parseString(response).getElementsByTagName(response_tag)[0].firstChild.data
 		return response
@@ -117,20 +117,15 @@ def connecthomenetwork(ssid, password):
 	
 	for device in discovered_devices:
 		sys.stdout.write(' - %s ... ' % device)
-		aps = [ap for ap in device.soap('WiFiSetup', 'GetApList', 'ApList').split('\n') if ap.startswith(ssid + '|')]
 		
+		aps = [ap for ap in device.soap('WiFiSetup', 'GetApList', 'ApList').split('\n') if ap.startswith(ssid + '|')]
 		if len(aps) != 1:
 			print 'Could not find network "%s" (or found several networks with this name). Try again or adjust SSID.' % ssid
 			continue
-			
 		channel, auth_mode, encryption_mode = re.match('.+\|(.+)\|.+\|(.+)/(.+),', aps[0]).groups()
+		
 		wemo_meta_array = device.soap('metainfo', 'GetMetaInfo', 'MetaInfo').split('|')
-		
 		encrypted_password = encrypt_wifi_password(password, wemo_meta_array)
-		
-		if encrypted_password == None:
-			print 'Error while calling openssl. Check that the binary is in current directory or in PATH'
-			continue
 			
 		connect_status = device.soap('WiFiSetup', 'ConnectHomeNetwork', 'PairingStatus', args = {
 			'ssid' : ssid,
@@ -141,13 +136,14 @@ def connecthomenetwork(ssid, password):
 		})
 		
 		time.sleep(2)
-		network_status = device.soap('WiFiSetup', 'GetNetworkStatus', 'NetworkStatus')
 		
-		if network_status not in ['1', '3']:
+		network_status = device.soap('WiFiSetup', 'GetNetworkStatus', 'NetworkStatus'):
+		close_status = device.soap('WiFiSetup', 'CloseSetup', 'status')
+		
+		if network_status not in ['1', '3'] or close_status != 'success' 
 			print 'Device failed to connect to the network (%s). Try again.' % [connect_status, network_status]
 			continue
 			
-		device.soap('WiFiSetup', 'CloseSetup', 'status')
 		print '[ok]'
 	
 if __name__ == '__main__':
