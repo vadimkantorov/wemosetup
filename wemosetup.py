@@ -97,8 +97,8 @@ def discover():
 	return discovered_devices
 
 def connecthomenetwork(ssid, password):
-	def encrypt_wifi_password(password, wemo_meta_array):
-		keydata = wemo_meta_array[0][0:6] + wemo_meta_array[1] + wemo_meta_array[0][6:12]
+	def encrypt_wifi_password(password, meta_array):
+		keydata = meta_array[0][0:6] + meta_array[1] + meta_array[0][6:12]
 		salt, iv = keydata[0:8], keydata[0:16]
 		assert len(salt) == 8 and len(iv) == 16
 
@@ -108,13 +108,10 @@ def connecthomenetwork(ssid, password):
 		return encrypted_password
 	
 	discovered_devices = discover()
-	
 	if len(discovered_devices) == 0:
 		return
 	
 	print 'Connecting discovered devices to network "%s"' % ssid
-	print ''
-	
 	for device in discovered_devices:
 		sys.stdout.write(' - %s ... ' % device)
 		
@@ -124,8 +121,8 @@ def connecthomenetwork(ssid, password):
 			continue
 		channel, auth_mode, encryption_mode = re.match('.+\|(.+)\|.+\|(.+)/(.+),', aps[0]).groups()
 		
-		wemo_meta_array = device.soap('metainfo', 'GetMetaInfo', 'MetaInfo').split('|')
-		encrypted_password = encrypt_wifi_password(password, wemo_meta_array)
+		meta_array = device.soap('metainfo', 'GetMetaInfo', 'MetaInfo').split('|')
+		encrypted_password = encrypt_wifi_password(password, meta_array)
 			
 		connect_status = device.soap('WiFiSetup', 'ConnectHomeNetwork', 'PairingStatus', args = {
 			'ssid' : ssid,
