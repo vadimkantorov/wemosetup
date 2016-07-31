@@ -1,11 +1,9 @@
 # wemosetup
-A simple Python script to setup WeMo devices.
-
-Supported:
+A simple Python script to setup WeMo devices supporting:
  - connecting to a home Wi-Fi network ("ConnectHomeNetwork")
  - showing a list of discovered devices
 
-Examples:
+# Examples
 
 > $ python wemosetup.py discover
 
@@ -34,7 +32,7 @@ Connecting discovered devices to network "<mywifinetworkname>"
 
 I have tested it with WeMo Insight and WeMo Bridge.
 
-TODO:
+# TODO
  - support getting end devices
  - support adding end devices
  - support switching state of end devices
