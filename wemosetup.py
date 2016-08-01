@@ -12,14 +12,14 @@ import socket
 import StringIO
 
 class Device:
-	def __init__(self, setup_xml_url):
-		setup_xml_response = urllib2.urlopen(setup_xml_url).read()
+	def __init__(self, setup_xml_url, timeout = 5):
+		setup_xml_response = urllib2.urlopen(setup_xml_url, timeout = timeout).read()
 		self.host = os.path.dirname(setup_xml_url).split('//')[1]
 		parsed_xml = xml.dom.minidom.parseString(setup_xml_response)
 		self.friendly_name = parsed_xml.getElementsByTagName('friendlyName')[0].firstChild.data
 		self.services = {elem.getElementsByTagName('serviceType')[0].firstChild.data : elem.getElementsByTagName('controlURL')[0].firstChild.data for elem in parsed_xml.getElementsByTagName('service')}
 		
-	def soap(self, service_name, method_name, response_tag = None, args = {}):
+	def soap(self, service_name, method_name, response_tag = None, args = {}, timeout = 30):
 		service_type, control_url = [(service_type, control_url) for service_type, control_url in self.services.items() if service_name in service_type][0]
 		service_url = 'http://' + self.host + '/' + control_url.lstrip('/')
 		request_body = '''<?xml version="1.0" encoding="utf-8"?>
@@ -36,16 +36,13 @@ class Device:
 			'Content-Length': len(request_body),
 			'HOST' : self.host
 		}
-		response = urllib2.urlopen(urllib2.Request(service_url, request_body, headers = request_headers), timeout = 30).read()
+		response = urllib2.urlopen(urllib2.Request(service_url, request_body, headers = request_headers), timeout = timeout).read()
 		if response_tag:
 			response = xml.dom.minidom.parseString(response).getElementsByTagName(response_tag)[0].firstChild.data
 		return response
 		
 	@staticmethod
-	def discover_devices(service_type):
-	    timeout=5
-	    retries=1
-	    mx=3
+	def discover_devices(service_type, timeout = 5, retries = 1, mx = 3):
 	    group = ("239.255.255.250", 1900)
 	    message = "\r\n".join([
 	        'M-SEARCH * HTTP/1.1',
