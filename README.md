@@ -18,7 +18,7 @@ Discovered:
 ```
 <br/>
 
-> $ python wemosetup.py connecthomenetwork --ssid <mywifinetworkname> --password <mywifinetworkpassword>
+> $ python wemosetup.py connecthomenetwork --ssid \<mywifinetworkname> --password \<mywifinetworkpassword>
 
 ```
 Discovering WeMo devices
