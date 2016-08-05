@@ -40,6 +40,7 @@ Connecting discovered devices to network "<mywifinetworkname>"
  - support adding end devices
  - support switching state of end devices
  - support switching / displaying binary state for Insight
+ - try/catch around all network calls
 
 # Credits
 1. https://web.archive.org/web/20130429034218/http://www.mgalisa.com/?p=91
