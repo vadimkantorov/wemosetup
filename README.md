@@ -31,13 +31,17 @@ Connecting discovered devices to network "<mywifinetworkname>"
  - WeMo Bridge (10.22.22.1:49152) ... [ok]
 
 ```
+# Dependencies
+- Python 2.7
+- openssl (or openssl.exe) binary discoverable in system $PATH
+
 # TODO
  - support getting end devices
  - support adding end devices
  - support switching state of end devices
  - support switching / displaying binary state for Insight
 
-# Acknowledgements
+# Credits
 1. https://web.archive.org/web/20130429034218/http://www.mgalisa.com/?p=91
 2. https://github.com/issackelly/wemo
 3. https://gist.github.com/hardillb/ffa9b458109fb8af7d0f#file-wemo-control-js
