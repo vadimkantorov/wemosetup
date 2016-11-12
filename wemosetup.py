@@ -131,9 +131,9 @@ def connecthomenetwork(ssid, password):
 		
 		time.sleep(2)
 		
-		network_status = device.soap('WiFiSetup', 'GetNetworkStatus', 'NetworkStatus'):
+		network_status = device.soap('WiFiSetup', 'GetNetworkStatus', 'NetworkStatus')
 		close_status = device.soap('WiFiSetup', 'CloseSetup', 'status')
-		if network_status not in ['1', '3'] or close_status != 'success' 
+		if network_status not in ['1', '3'] or close_status != 'success':
 			print 'Device failed to connect to the network (%s). Try again.' % [connect_status, network_status]
 			continue
 			
