@@ -136,7 +136,7 @@ def connecthomenetwork(ssid, password, allowssidgroup):
 			'channel'  : channel
 		})
 		
-		time.sleep(2)
+		time.sleep(10)
 		
 		network_status = device.soap('WiFiSetup', 'GetNetworkStatus', 'NetworkStatus')
 		close_status = device.soap('WiFiSetup', 'CloseSetup', 'status')
