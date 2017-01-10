@@ -11,7 +11,7 @@ import httplib
 import socket
 import StringIO
 
-class Device:
+class SsdpDevice:
 	def __init__(self, setup_xml_url, timeout = 5):
 		setup_xml_response = urllib2.urlopen(setup_xml_url, timeout = timeout).read()
 		self.host = os.path.dirname(setup_xml_url).split('//')[1]
@@ -76,11 +76,11 @@ def discover():
 	print 'Discovering WeMo devices'
 	print ''
 	
-	setup_xml_urls = sorted(set(Device.discover_devices('urn:Belkin:service:basicevent:1') + map('http://10.22.22.1:{0}/setup.xml'.format, range(49151, 49156))))
+	setup_xml_urls = sorted(set(SsdpDevice.discover_devices('urn:Belkin:service:basicevent:1') + map('http://10.22.22.1:{0}/setup.xml'.format, range(49151, 49156))))
 	discovered_devices = []
 	for setup_xml_url in setup_xml_urls:
 		try:
-			discovered_devices.append(Device(setup_xml_url))
+			discovered_devices.append(SsdpDevice(setup_xml_url))
 		except urllib2.URLError:
 			continue
 			
