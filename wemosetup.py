@@ -43,12 +43,12 @@ class Device:
 		
 	@staticmethod
 	def discover_devices(service_type, timeout = 5, retries = 1, mx = 3):
-	    group = ("239.255.255.250", 1900)
+	    host_port = ("239.255.255.250", 1900)
 	    message = "\r\n".join([
 	        'M-SEARCH * HTTP/1.1',
 	        'HOST: {0}:{1}',
 	        'MAN: "ssdp:discover"',
-	        'ST: {st}','MX: {mx}','',''])
+	        'ST: {service_type}','MX: {mx}','',''])
 	    socket.setdefaulttimeout(timeout)
 	    
 	    setup_xml_urls = []
@@ -56,7 +56,7 @@ class Device:
 	        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 	        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
-	        sock.sendto(message.format(*group, st=service_type, mx=mx), group)
+	        sock.sendto(message.format(*host_port, service_type=service_type, mx=mx), host_port)
 	        while True:
 	            try:
 	            	fake_socket = StringIO.StringIO(sock.recv(1024))
