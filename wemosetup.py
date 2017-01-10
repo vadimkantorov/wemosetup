@@ -93,7 +93,7 @@ def discover():
 	print ''
 	return discovered_devices
 
-def connecthomenetwork(ssid, password, allowssidgroup):
+def connecthomenetwork(ssid, password):
 	def encrypt_wifi_password(password, meta_array):
 		keydata = meta_array[0][0:6] + meta_array[1] + meta_array[0][6:12]
 		salt, iv = keydata[0:8], keydata[0:16]
@@ -117,12 +117,8 @@ def connecthomenetwork(ssid, password, allowssidgroup):
 			print 'Could not find network "%s". Try again.' % ssid
 			continue
 		elif apCount > 1:
-			if allowssidgroup:
-				aps = [aps[0]]
-				print 'Using first matching SSID in network group "%s"' % ssid
-			else:
-				print 'Found more than one network with the name "%s". Use --allowssidgroup or adjust SSID.' % ssid
-				continue
+			print 'Discovered %d networks with SSID "%s", using the first available..."' % (apCount,ssid)
+			aps = [aps[0]]
 		channel, auth_mode, encryption_mode = re.match('.+\|(.+)\|.+\|(.+)/(.+),', aps[0]).groups()
 		
 		meta_array = device.soap('metainfo', 'GetMetaInfo', 'MetaInfo').split('|')
@@ -153,7 +149,6 @@ if __name__ == '__main__':
 	cmd = subparsers.add_parser('connecthomenetwork')
 	cmd.add_argument('--ssid', required = True)
 	cmd.add_argument('--password', required = True)
-	cmd.add_argument('--allowssidgroup', required = False)
 	cmd.set_defaults(func = connecthomenetwork)
 	
 	subparsers.add_parser('discover').set_defaults(func = discover)
