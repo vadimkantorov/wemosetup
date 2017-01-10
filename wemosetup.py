@@ -84,12 +84,9 @@ def discover():
 		except urllib2.URLError:
 			continue
 			
-	if discovered_devices:
-		print 'Discovered:'
-		for device in discovered_devices:
-			print ' - %s' % device
-	else:
-		print 'No devices discovered'
+	print 'Discovered:' if discovered_devices else 'No devices discovered'
+	for device in discovered_devices:
+		print ' - %s' % device
 	print ''
 	return discovered_devices
 
@@ -129,7 +126,7 @@ def connecthomenetwork(ssid, password):
 			'channel'  : channel
 		})
 		
-		time.sleep(2)
+		time.sleep(10)
 		
 		network_status = device.soap('WiFiSetup', 'GetNetworkStatus', 'NetworkStatus')
 		close_status = device.soap('WiFiSetup', 'CloseSetup', 'status')
