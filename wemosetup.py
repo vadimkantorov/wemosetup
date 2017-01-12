@@ -108,11 +108,14 @@ def connecthomenetwork(ssid, password):
 	print 'Connecting discovered devices to network "%s"' % ssid
 	for device in discovered_devices:
 		sys.stdout.write(' - %s ... ' % device)
-		
 		aps = [ap for ap in device.soap('WiFiSetup', 'GetApList', 'ApList').split('\n') if ap.startswith(ssid + '|')]
-		if len(aps) != 1:
-			print 'Could not find network "%s" (or found several networks with this name). Try again or adjust SSID.' % ssid
+		apCount = len(aps)
+		if apCount == 0:
+			print 'Could not find network "%s". Try again.' % ssid
 			continue
+		elif apCount > 1:
+			print 'Discovered %d networks with SSID "%s", using the first available..."' % (apCount,ssid)
+			aps = [aps[0]]
 		channel, auth_mode, encryption_mode = re.match('.+\|(.+)\|.+\|(.+)/(.+),', aps[0]).groups()
 		
 		meta_array = device.soap('metainfo', 'GetMetaInfo', 'MetaInfo').split('|')
