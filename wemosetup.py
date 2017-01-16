@@ -56,7 +56,7 @@ class SsdpDevice:
 	        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 	        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
-	        sock.sendto(message.format(*host_port, service_type=service_type, mx=mx), host_port)
+	        sock.sendto(message.format(*host_port, service_type = service_type, mx = mx), host_port)
 	        while True:
 	            try:
 	            	fake_socket = StringIO.StringIO(sock.recv(1024))
