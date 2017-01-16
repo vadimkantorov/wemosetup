@@ -90,6 +90,9 @@ def discover():
 	print ''
 	return discovered_devices
 
+def toggle(ip):
+	pass
+
 def connecthomenetwork(ssid, password):
 	def encrypt_wifi_password(password, meta_array):
 		keydata = meta_array[0][0:6] + meta_array[1] + meta_array[0][6:12]
@@ -147,6 +150,9 @@ if __name__ == '__main__':
 	cmd.add_argument('--ssid', required = True)
 	cmd.add_argument('--password', required = True)
 	cmd.set_defaults(func = connecthomenetwork)
+	
+	cmd = subparsers.add_parser('toggle')
+	cmd.add_argument('--ip', required = True)
 	
 	subparsers.add_parser('discover').set_defaults(func = discover)
 	
