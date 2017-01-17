@@ -153,6 +153,7 @@ if __name__ == '__main__':
 	
 	cmd = subparsers.add_parser('toggle')
 	cmd.add_argument('--ip', required = True)
+	cmd.set_defaults(func = toggle)
 	
 	subparsers.add_parser('discover').set_defaults(func = discover)
 	
