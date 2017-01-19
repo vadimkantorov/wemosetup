@@ -14,14 +14,14 @@ import StringIO
 class SsdpDevice:
 	def __init__(self, setup_xml_url, timeout = 5):
 		setup_xml_response = urllib2.urlopen(setup_xml_url, timeout = timeout).read()
-		self.host = os.path.dirname(setup_xml_url).split('//')[1]
+		self.host_port = tuple(os.path.dirname(setup_xml_url).split('//')[1].split(':'))
 		parsed_xml = xml.dom.minidom.parseString(setup_xml_response)
 		self.friendly_name = parsed_xml.getElementsByTagName('friendlyName')[0].firstChild.data
 		self.services = {elem.getElementsByTagName('serviceType')[0].firstChild.data : elem.getElementsByTagName('controlURL')[0].firstChild.data for elem in parsed_xml.getElementsByTagName('service')}
 		
 	def soap(self, service_name, method_name, response_tag = None, args = {}, timeout = 30):
 		service_type, control_url = [(service_type, control_url) for service_type, control_url in self.services.items() if service_name in service_type][0]
-		service_url = 'http://' + self.host + '/' + control_url.lstrip('/')
+		service_url = 'http://%s:%s/' % self.host_port + control_url.lstrip('/')
 		request_body = '''<?xml version="1.0" encoding="utf-8"?>
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
  <s:Body>
@@ -34,7 +34,7 @@ class SsdpDevice:
 			'Content-Type' : 'text/xml; charset="utf-8"',
 			'SOAPACTION' : '"%s#%s"' % (service_type, method_name),
 			'Content-Length': len(request_body),
-			'HOST' : self.host
+			'HOST' : '%s:%s' % self.host_port
 		}
 		response = urllib2.urlopen(urllib2.Request(service_url, request_body, headers = request_headers), timeout = timeout).read()
 		if response_tag:
@@ -69,7 +69,7 @@ class SsdpDevice:
 	    return setup_xml_urls
 		
 	def __str__(self):
-		return '%s (%s)' % (self.friendly_name, self.host)
+		return '%s (%s:%s)' % ((self.friendly_name,) + self.host_port)
 
 def discover():
 	print ''
@@ -90,8 +90,11 @@ def discover():
 	print ''
 	return discovered_devices
 
-def toggle(ip):
-	pass
+def toggle(host, port):
+	device = SsdpDevice('http://%s:%s/setup.xml' % (host, port))
+	new_binary_state = 1 - int(device.soap('basicevent', 'GetBinaryState', 'BinaryState'))
+	device.soap('basicevent', 'SetBinaryState', args = {'BinaryState' : new_binary_state})
+	print '%s toggled to: %s' % (device, new_binary_state == 1)
 
 def connecthomenetwork(ssid, password):
 	def encrypt_wifi_password(password, meta_array):
@@ -152,7 +155,8 @@ if __name__ == '__main__':
 	cmd.set_defaults(func = connecthomenetwork)
 	
 	cmd = subparsers.add_parser('toggle')
-	cmd.add_argument('--ip', required = True)
+	cmd.add_argument('--host', required = True)
+	cmd.add_argument('--port', required = True, type = int)
 	cmd.set_defaults(func = toggle)
 	
 	subparsers.add_parser('discover').set_defaults(func = discover)
