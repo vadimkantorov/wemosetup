@@ -96,7 +96,7 @@ def toggle(host, port):
 	device.soap('basicevent', 'SetBinaryState', args = {'BinaryState' : new_binary_state})
 	print '%s toggled to: %s' % (device, new_binary_state == 1)
 
-def connecthomenetwork(ssid, password):
+def connecthomenetwork(ssid, password, timeout = 10):
 	def encrypt_wifi_password(password, meta_array):
 		keydata = meta_array[0][0:6] + meta_array[1] + meta_array[0][6:12]
 		salt, iv = keydata[0:8], keydata[0:16]
@@ -108,20 +108,17 @@ def connecthomenetwork(ssid, password):
 		return encrypted_password
 	
 	discovered_devices = discover()
-	if len(discovered_devices) == 0:
-		return
 	
-	print 'Connecting discovered devices to network "%s"' % ssid
+	print 'Connecting discovered devices to network "%s"' % ssid if discovered_devices else ''
 	for device in discovered_devices:
 		sys.stdout.write(' - %s ... ' % device)
 		aps = [ap for ap in device.soap('WiFiSetup', 'GetApList', 'ApList').split('\n') if ap.startswith(ssid + '|')]
-		apCount = len(aps)
-		if apCount == 0:
+		if len(aps) == 0:
 			print 'Could not find network "%s". Try again.' % ssid
 			continue
-		elif apCount > 1:
-			print 'Discovered %d networks with SSID "%s", using the first available..."' % (apCount,ssid)
-			aps = [aps[0]]
+		elif len(aps) > 1:
+			print 'Discovered %d networks with SSID "%s", using the first available..."' % (len(aps), ssid)
+			
 		channel, auth_mode, encryption_mode = re.match('.+\|(.+)\|.+\|(.+)/(.+),', aps[0]).groups()
 		
 		meta_array = device.soap('metainfo', 'GetMetaInfo', 'MetaInfo').split('|')
@@ -135,7 +132,7 @@ def connecthomenetwork(ssid, password):
 			'channel'  : channel
 		})
 		
-		time.sleep(10)
+		time.sleep(timeout)
 		
 		network_status = device.soap('WiFiSetup', 'GetNetworkStatus', 'NetworkStatus')
 		close_status = device.soap('WiFiSetup', 'CloseSetup', 'status')

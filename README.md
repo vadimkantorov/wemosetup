@@ -39,9 +39,8 @@ Connecting discovered devices to network "<mywifinetworkname>"
  - support getting end devices
  - support adding end devices
  - support switching state of end devices
- - try/catch around all network calls
 
-# Credits
+# Credits and references
 1. https://web.archive.org/web/20130429034218/http://www.mgalisa.com/?p=91
 2. https://github.com/issackelly/wemo
 3. https://gist.github.com/hardillb/ffa9b458109fb8af7d0f#file-wemo-control-js
