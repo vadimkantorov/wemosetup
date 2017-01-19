@@ -120,14 +120,11 @@ def connecthomenetwork(ssid, password, timeout = 10):
 			print 'Discovered %d networks with SSID "%s", using the first available..."' % (len(aps), ssid)
 			
 		channel, auth_mode, encryption_mode = re.match('.+\|(.+)\|.+\|(.+)/(.+),', aps[0]).groups()
-		
 		meta_array = device.soap('metainfo', 'GetMetaInfo', 'MetaInfo').split('|')
-		encrypted_password = encrypt_wifi_password(password, meta_array)
-			
 		connect_status = device.soap('WiFiSetup', 'ConnectHomeNetwork', 'PairingStatus', args = {
 			'ssid' : ssid,
 			'auth' : auth_mode, 
-			'password' : encrypted_password,
+			'password' : encrypt_wifi_password(password, meta_array),
 			'encrypt' : encryption_mode,
 			'channel'  : channel
 		})
