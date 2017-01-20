@@ -2,6 +2,7 @@
 A simple Python script to set up WeMo devices supporting:
  - connecting to a home Wi-Fi network (via calling a SOAP method ConnectHomeNetwork)
  - showing a list of discovered devices (via SSDP)
+ - toggling WeMo switch device state
  - working on Windows too
 
 I have tested it with WeMo Insight and WeMo Bridge.
@@ -42,3 +43,4 @@ Connecting discovered devices to network "<mywifinetworkname>"
 1. https://web.archive.org/web/20130429034218/http://www.mgalisa.com/?p=91
 2. https://github.com/issackelly/wemo
 3. https://gist.github.com/hardillb/ffa9b458109fb8af7d0f#file-wemo-control-js
+4. https://github.com/pavoni/pywemo/blob/master/pywemo/ouimeaux_device/bridge.py
