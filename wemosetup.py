@@ -162,23 +162,11 @@ def toggle(host, port):
 	if 'Bridge' in device.friendly_name:
 		bulbs = getenddevices(device, 'PAIRED_LIST')
 		new_binary_state = 1 - int(bulbs.items()[0][1] or 0)
-		for bulb_device_id in bulbs.keys():
-			device.soap('bridge', 'SetDeviceStatus', args = {'DeviceStatusList' : '''<?xml version="1.0" encoding="utf-8"?>
-			<DeviceStatus>
-				<IsGroupAction>NO</IsGroupAction>
-				<DeviceID available="YES">%s</DeviceID>
-				<CapabilityID>%s</CapabilityID>
-				<CapabilityValue>%s</CapabilityValue>
-			</DeviceStatus>
-			'''.replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;') % (bulb_device_id, 10006, new_binary_state)})
-		
-		#'&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-		#&lt;DeviceStatus&gt;
-			#&lt;IsGroupAction&gt;NO#&lt;/IsGroupAction&gt;
-			#&lt;DeviceID available=&quot;YES&quot;&gt;%s#&lt;/DeviceID&gt;&lt;
-			#CapabilityID&gt;%s&lt;/CapabilityID&gt;
-			#&lt;CapabilityValue&gt;%s&lt;/CapabilityValue&gt;
-		#&lt;/DeviceStatus&gt;',
+		device.soap('bridge', 'SetDeviceStatus', args = {'DeviceStatusList' : 
+			''.join(['<?xml version="1.0" encoding="utf-8"?>'] +
+				['<DeviceStatus><IsGroupAction>NO</IsGroupAction><DeviceID available="YES">%s</DeviceID><CapabilityID>%s</CapabilityID><CapabilityValue>%s</CapabilityValue></DeviceStatus>'.replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;') % (bulb_device_id, 10006, new_binary_state) for bulb_device_id in bulbs.keys()]
+			)
+		})
 	else:
 		new_binary_state = 1 - int(device.soap('basicevent', 'GetBinaryState', 'BinaryState'))
 		device.soap('basicevent', 'SetBinaryState', args = {'BinaryState' : new_binary_state})
