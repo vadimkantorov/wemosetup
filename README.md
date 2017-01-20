@@ -45,3 +45,4 @@ Connecting discovered devices to network "<mywifinetworkname>"
 2. https://github.com/issackelly/wemo
 3. https://gist.github.com/hardillb/ffa9b458109fb8af7d0f#file-wemo-control-js
 4. https://github.com/pavoni/pywemo/blob/master/pywemo/ouimeaux_device/bridge.py
+5. https://www.scip.ch/en/?labs.20160218
