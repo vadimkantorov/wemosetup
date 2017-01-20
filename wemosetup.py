@@ -185,6 +185,10 @@ def toggle(host, port):
 	
 	print '%s toggled to: %s' % (device, new_binary_state)
 
+def ifttt(host, port):
+	device = SsdpDevice('http://%s:%s/setup.xml' % (host, port))
+	home_id = ''
+	pin_url = 'https://fw.xbcs.net/apis/http/plugin/generatePin/%s/IFTTT' % home_id
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
@@ -204,6 +208,7 @@ if __name__ == '__main__':
 	subparsers.add_parser('getenddevices', parents = [common]).set_defaults(func = getenddevices)
 	subparsers.add_parser('addenddevices', parents = [common]).set_defaults(func = addenddevices)
 	subparsers.add_parser('toggle', parents = [common]).set_defaults(func = toggle)
+	subparsers.add_parser('ifttt', parents = [common]).set_defaults(func = toggle)
 		
 	args = vars(parser.parse_args())
 	cmd = args.pop('func')
