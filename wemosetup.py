@@ -198,7 +198,7 @@ if __name__ == '__main__':
 	cmd.set_defaults(func = connecthomenetwork)
 	
 	common = argparse.ArgumentParser(add_help = False)
-	common.add_argument('--host', required = True)
+	common.add_argument('--ip', required = True, dest = 'host')
 	common.add_argument('--port', required = True, type = int)
 	
 	subparsers.add_parser('getenddevices', parents = [common]).set_defaults(func = getenddevices)
