@@ -36,9 +36,7 @@ Connecting discovered devices to network "<mywifinetworkname>"
 - openssl (or openssl.exe) binary discoverable in system $PATH
 
 # TODO
- - support getting end devices
- - support adding end devices
- - support switching state of end devices
+- support IFTTT
 
 # Credits and references
 1. https://web.archive.org/web/20130429034218/http://www.mgalisa.com/?p=91

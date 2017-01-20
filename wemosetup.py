@@ -17,6 +17,7 @@ class SsdpDevice:
 		self.host_port = tuple(os.path.dirname(setup_xml_url).split('//')[1].split(':'))
 		parsed_xml = xml.dom.minidom.parseString(setup_xml_response)
 		self.friendly_name = parsed_xml.getElementsByTagName('friendlyName')[0].firstChild.data
+		self.udn = parsed_xml.getElementsByTagName('UDN')[0].firstChild.data
 		self.services = {elem.getElementsByTagName('serviceType')[0].firstChild.data : elem.getElementsByTagName('controlURL')[0].firstChild.data for elem in parsed_xml.getElementsByTagName('service')}
 		
 	def soap(self, service_name, method_name, response_tag = None, args = {}, timeout = 30):
@@ -90,12 +91,6 @@ def discover():
 	print ''
 	return discovered_devices
 
-def toggle(host, port):
-	device = SsdpDevice('http://%s:%s/setup.xml' % (host, port))
-	new_binary_state = 1 - int(device.soap('basicevent', 'GetBinaryState', 'BinaryState'))
-	device.soap('basicevent', 'SetBinaryState', args = {'BinaryState' : new_binary_state})
-	print '%s toggled to: %s' % (device, new_binary_state == 1)
-
 def connecthomenetwork(ssid, password, timeout = 10):
 	def encrypt_wifi_password(password, meta_array):
 		keydata = meta_array[0][0:6] + meta_array[1] + meta_array[0][6:12]
@@ -138,23 +133,78 @@ def connecthomenetwork(ssid, password, timeout = 10):
 			continue
 			
 		print '[ok]'
+
+def getenddevices(device = None, host = None, port = None, list_type = 'PAIRED_LIST'):
+	device = device or SsdpDevice('http://%s:%s/setup.xml' % (host, port))
+	end_devices_decoded = device.soap('bridge', 'GetEndDevices', 'DeviceLists', args = {'DevUDN' : device.udn, 'ReqListType' : list_type}).replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"')
+	end_devices = {str(elem.getElementsByTagName('DeviceID')[0].firstChild.data) : {'' : None, '1' : 1, '0' : 0}[elem.getElementsByTagName('CurrentState')[0].firstChild.data.split(',')[0]] for elem in xml.dom.minidom.parseString(end_devices_decoded).getElementsByTagName('DeviceInfo')}
+	if host != None and port != None:
+		print 'End devices of %s' % device
+		for device_id, state in sorted(end_devices.items()):
+			print ' - %s, state: %s' % (device_id, {1 : 'on', 0 : 'off', None : 'unknown'}[state])
+	return end_devices
+		
+def addenddevices(host, port, timeout = 10):
+	device = SsdpDevice('http://%s:%s/setup.xml' % (host, port))
 	
+	device.soap('bridge', 'OpenNetwork', args = {'DevUDN' : device.udn})
+	time.sleep(timeout)
+	scanned_bulb_device_ids = getenddevices(device, 'SCAN_LIST').keys()
+	device.soap('bridge', 'AddDeviceName', args = {'DeviceIDs' : ','.join(scanned_bulb_device_ids), 'FriendlyNames' : ','.join(scanned_bulb_device_ids)})
+	time.sleep(timeout)
+	paired_bulb_device_ids = getenddevices(device, 'PAIRED_LIST').keys()
+	device.soap('bridge', 'CloseNetwork', args = {'DevUDN' : device.udn})
+	
+	print 'Paired bulbs: %s' % sorted(set(scanned_bulb_device_ids) & set(paired_bulb_device_ids))
+	
+def toggle(host, port):
+	device = SsdpDevice('http://%s:%s/setup.xml' % (host, port))
+	if 'Bridge' in device.friendly_name:
+		bulbs = getenddevices(device, 'PAIRED_LIST')
+		new_binary_state = 1 - int(bulbs.items()[0][1] or 0)
+		for bulb_device_id in bulbs.keys():
+			device.soap('bridge', 'SetDeviceStatus', args = {'DeviceStatusList' : '''<?xml version="1.0" encoding="utf-8"?>
+			<DeviceStatus>
+				<IsGroupAction>NO</IsGroupAction>
+				<DeviceID available="YES">%s</DeviceID>
+				<CapabilityID>%s</CapabilityID>
+				<CapabilityValue>%s</CapabilityValue>
+			</DeviceStatus>
+			'''.replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;') % (bulb_device_id, 10006, new_binary_state)})
+		
+		#'&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+		#&lt;DeviceStatus&gt;
+			#&lt;IsGroupAction&gt;NO#&lt;/IsGroupAction&gt;
+			#&lt;DeviceID available=&quot;YES&quot;&gt;%s#&lt;/DeviceID&gt;&lt;
+			#CapabilityID&gt;%s&lt;/CapabilityID&gt;
+			#&lt;CapabilityValue&gt;%s&lt;/CapabilityValue&gt;
+		#&lt;/DeviceStatus&gt;',
+	else:
+		new_binary_state = 1 - int(device.soap('basicevent', 'GetBinaryState', 'BinaryState'))
+		device.soap('basicevent', 'SetBinaryState', args = {'BinaryState' : new_binary_state})
+	
+	print '%s toggled to: %s' % (device, new_binary_state)
+
+
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	subparsers = parser.add_subparsers()
+	
+	subparsers.add_parser('discover').set_defaults(func = discover)
 	
 	cmd = subparsers.add_parser('connecthomenetwork')
 	cmd.add_argument('--ssid', required = True)
 	cmd.add_argument('--password', required = True)
 	cmd.set_defaults(func = connecthomenetwork)
 	
-	cmd = subparsers.add_parser('toggle')
-	cmd.add_argument('--host', required = True)
-	cmd.add_argument('--port', required = True, type = int)
-	cmd.set_defaults(func = toggle)
+	common = argparse.ArgumentParser(add_help = False)
+	common.add_argument('--host', required = True)
+	common.add_argument('--port', required = True, type = int)
 	
-	subparsers.add_parser('discover').set_defaults(func = discover)
-	
+	subparsers.add_parser('getenddevices', parents = [common]).set_defaults(func = getenddevices)
+	subparsers.add_parser('addenddevices', parents = [common]).set_defaults(func = addenddevices)
+	subparsers.add_parser('toggle', parents = [common]).set_defaults(func = toggle)
+		
 	args = vars(parser.parse_args())
 	cmd = args.pop('func')
 	cmd(**args)
