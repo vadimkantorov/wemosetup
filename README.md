@@ -59,7 +59,7 @@ $ python wemosetup.py ifttt --host 10.22.22.1 --port 49152 --imei 123456789
 Navigate to the following address to complete pairing:
 https://ifttt.com/wemo_activate?wemopin=GENERATED_MAGIC_WEMO_PIN&done_url=wemo://status=0
 
-and run the following JavaScript code:
+and run the following JavaScript code when you get to the webpage that says you need to open it from the WeMo app:
 document.getElementById("WeMoAppMobileData").innerHTML = JSON.stringify({uniqueId:"SOME_ID_1", homeId:"SOME_ID_2", signature:"SOME_ID_3"}); doSubmit(1);
 ```
 
