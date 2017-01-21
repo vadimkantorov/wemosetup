@@ -201,7 +201,7 @@ def ifttt(host, port, device_id):
 	print 'Navigate to the following address to complete pairing:'
 	print 'https://ifttt.com/wemo_activate?wemopin=%s&done_url=wemo://status=0' % activation_code
 	print ''
-	print 'and run the following JavaScript code:'
+	print 'and run the following JavaScript code when you get to the webpage that says you need to open it from the WeMo app:'
 	print 'document.getElementById("WeMoAppMobileData").innerHTML = JSON.stringify({uniqueId:"%s", homeId:"%s", signature:"%s"}); doSubmit(1);' % (device_id, home_id, auth_code)
 
 if __name__ == '__main__':
