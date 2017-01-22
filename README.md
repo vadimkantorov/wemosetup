@@ -23,7 +23,7 @@ Discovered:
 
 ## Connect to home Wi-Fi
 ```shell
-$ python wemosetup.py connecthomenetwork --host 10.22.22.1 --port 49152 --ssid \<mywifinetworkname> --password \<mywifinetworkpassword>
+$ python wemosetup.py connecthomenetwork --host 10.22.22.1 --port 49152 --ssid <mywifinetworkname> --password <mywifinetworkpassword>
 
 
 Device WeMo Bridge (10.22.22.1:49152) connceted to network "<mywifinetworkname>"
