@@ -11,57 +11,31 @@ I have tested it with WeMo Insight and WeMo Bridge.
 
 # Examples
 
-## Discover devices
 ```shell
-$ python wemosetup.py discover
+# Discover devices
+python wemosetup.py discover
 
-Discovering WeMo devices
+# Connect to home wi-fi
+python wemosetup.py connecthomenetwork --host 10.22.22.1 --port 49152 --ssid <mywifinetworkname> --password <mywifinetworkpassword>
 
-Discovered:
- - WeMo Bridge (10.22.22.1:49152)
+# Add bulbs
+python wemosetup.py addenddevices --host 10.22.22.1 --port 49152
+
+# List bulbs
+python wemosetup.py getenddevices --host 10.22.22.1 --port 49152
+
+# Remove bulbs
+python wemosetup.py removeenddevices --host 10.22.22.1 --port 49152
+
+# Toggle bubls
+python wemosetup.py toggle --host 10.22.22.1 --port 49152
+
+# Pair with IFTTT (will ask to follow a web link and then executing JavaScript from DevTools console)
+python wemosetup.py ifttt --host 10.22.22.1 --port 49152 --imei 123456789
 ```
 
-## Connect to home Wi-Fi
-```shell
-$ python wemosetup.py connecthomenetwork --host 10.22.22.1 --port 49152 --ssid <mywifinetworkname> --password <mywifinetworkpassword>
-
-
-Device WeMo Bridge (10.22.22.1:49152) connected to network "<mywifinetworkname>"
-
-```
-
-## Add bulbs
-```shell
-$ python wemosetup.py addenddevices --host 10.22.22.1 --port 49152
-
-Paired bulbs: ['DEADBEEFBULBID']
-```
-
-## List bulbs
-```shell
-$ python wemosetup.py getenddevices --host 10.22.22.1 --port 49152
-
-End devices of WeMo Bridge (192.168.0.25:49154)
- - 1234MYBULBID, state: off
-```
-
-## Toggle bulbs
-```shell
-$ python wemosetup.py toggle --host 10.22.22.1 --port 49152
-
-WeMo Bridge (192.168.0.25:49154) toggled to: on
-```
-
-## Pair with IFTTT
-```shell
-$ python wemosetup.py ifttt --host 10.22.22.1 --port 49152 --imei 123456789
-
-Navigate to the following address to complete pairing:
-https://ifttt.com/wemo_activate?wemopin=GENERATED_MAGIC_WEMO_PIN&done_url=wemo://status=0
-
-and run the following JavaScript code when you get to the webpage that says you need to open it from the WeMo app:
-document.getElementById("WeMoAppMobileData").innerHTML = JSON.stringify({uniqueId:"SOME_ID_1", homeId:"SOME_ID_2", signature:"SOME_ID_3"}); doSubmit(1);
-```
+# Reseting WeMo
+WeMo devices are not very stable and may require resets of [bridges, switches](http://community.wemo.com/t5/WEMO-Application/WeMo-Resetting-the-Easy-Way/td-p/5016) and [bulbs](https://support.smartthings.com/hc/en-us/articles/204259040-Belkin-WeMo-LED-Bulb-F7C033-).
 
 # Dependencies
 - Python 2.7
