@@ -78,7 +78,7 @@ class WemoDevice(SsdpDevice):
 	
 	@staticmethod
 	def discover_devices(*args, **kwargs):
-		return [re.search('//(.+):(\d+)/', setup_xml_url) for setup_xml_url in SsdpDevice.discover_devices(service_type = 'urn:Belkin:service:basicevent:1', *args, **kwargs)]
+		return [re.search('//(.+):(\d+)/', setup_xml_url).groups() for setup_xml_url in SsdpDevice.discover_devices(service_type = 'urn:Belkin:service:basicevent:1', *args, **kwargs)]
 		
 	def encrypt_wifi_password(self, password, meta_array):
 		keydata = meta_array[0][0:6] + meta_array[1] + meta_array[0][6:12]
@@ -101,10 +101,10 @@ class WemoDevice(SsdpDevice):
 
 def discover():
 	print ''
-	print 'Discovering WeMo devices'
+	print 'Discovery of WeMo devices'
 	print ''
 	
-	host_ports = sorted(set(SsdpDevice.discover_devices() + [('10.22.22.1', port) for port in range(49151, 49156)]))
+	host_ports = sorted(set(WemoDevice.discover_devices() + [('10.22.22.1', str(port)) for port in range(49151, 49156)]))
 	discovered_devices = []
 	for host_port in host_ports:
 		try:
@@ -146,9 +146,9 @@ def connecthomenetwork(host, port, ssid, password, timeout = 10):
 def getenddevices(device = None, host = None, port = None, list_type = 'PAIRED_LIST'):
 	device = device or WemoDevice(host, port)
 	end_devices_decoded = device.soap('bridge', 'GetEndDevices', 'DeviceLists', args = {'DevUDN' : device.udn, 'ReqListType' : list_type}).replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"')
-	end_devices = {str(elem.getElementsByTagName('DeviceID')[0].firstChild.data) : {'' : None, '1' : 1, '0' : 0}[elem.getElementsByTagName('CurrentState')[0].firstChild.data.split(',')[0]] for elem in xml.dom.minidom.parseString(end_devices_decoded).getElementsByTagName('DeviceInfo')}
+	end_devices = {str(elem.getElementsByTagName('DeviceID')[0].firstChild.data) : {'' : None, '1' : 1, '0' : 0}[elem.getElementsByTagName('CurrentState')[0].firstChild.data.split(',')[0]] for elem in xml.dom.minidom.parseString(end_devices_decoded).getElementsByTagName('DeviceInfo')} if end_devices_decoded != '0' else {}
 	if host != None and port != None:
-		print 'End devices of %s' % device
+		print ('End devices of %s' if end_devices else 'No end devices of %s were found') % device
 		for device_id, state in sorted(end_devices.items()):
 			print ' - %s, state: %s' % (device_id, device.prettify_device_state(state))
 	return end_devices
@@ -158,18 +158,37 @@ def addenddevices(host, port, timeout = 10):
 	
 	device.soap('bridge', 'OpenNetwork', args = {'DevUDN' : device.udn})
 	time.sleep(timeout)
-	scanned_bulb_device_ids = getenddevices(device, 'SCAN_LIST').keys()
-	device.soap('bridge', 'AddDeviceName', args = {'DeviceIDs' : ','.join(scanned_bulb_device_ids), 'FriendlyNames' : ','.join(scanned_bulb_device_ids)})
-	time.sleep(timeout)
-	paired_bulb_device_ids = getenddevices(device, 'PAIRED_LIST').keys()
+	
+	scanned_bulb_device_ids = getenddevices(device, list_type = 'SCAN_LIST').keys()	
+	if scanned_bulb_device_ids:
+		device.soap('bridge', 'AddDeviceName', args = {'DeviceIDs' : ','.join(scanned_bulb_device_ids), 'FriendlyNames' : ','.join(scanned_bulb_device_ids)})
+		time.sleep(timeout)
+		
+	paired_bulb_device_ids = getenddevices(device, list_type = 'PAIRED_LIST').keys()
 	device.soap('bridge', 'CloseNetwork', args = {'DevUDN' : device.udn})
 	
 	print 'Paired bulbs: %s' % sorted(set(scanned_bulb_device_ids) & set(paired_bulb_device_ids))
 	
+def removeenddevices(host, port, timeout = 10):
+	device = WemoDevice(host, port)
+	
+	device.soap('bridge', 'OpenNetwork', args = {'DevUDN' : device.udn})
+	time.sleep(timeout)
+	
+	scanned_bulb_device_ids = getenddevices(device, list_type = 'PAIRED_LIST').keys()	
+	if scanned_bulb_device_ids:
+		device.soap('bridge', 'RemoveDevice', args = {'DeviceIDs' : ','.join(scanned_bulb_device_ids), 'FriendlyNames' : ','.join(scanned_bulb_device_ids)})
+		time.sleep(timeout)
+		
+	paired_bulb_device_ids = getenddevices(device, list_type = 'PAIRED_LIST').keys()
+	device.soap('bridge', 'CloseNetwork', args = {'DevUDN' : device.udn})
+	
+	print 'Bulbs removed: %s, bulbs left: %s' % (sorted(scanned_bulb_device_ids), sorted(paired_bulb_device_ids))
+	
 def toggle(host, port):
 	device = WemoDevice(host, port)
 	if 'Bridge' in device.friendly_name:
-		bulbs = getenddevices(device, 'PAIRED_LIST')
+		bulbs = getenddevices(device, list_type = 'PAIRED_LIST')
 		new_binary_state = 1 - int(bulbs.items()[0][1] or 0)
 		device.soap('bridge', 'SetDeviceStatus', args = {'DeviceStatusList' : 
 			''.join(['<?xml version="1.0" encoding="utf-8"?>'] +
@@ -215,6 +234,7 @@ if __name__ == '__main__':
 	subparsers.add_parser('discover').set_defaults(func = discover)
 	subparsers.add_parser('getenddevices', parents = [common]).set_defaults(func = getenddevices)
 	subparsers.add_parser('addenddevices', parents = [common]).set_defaults(func = addenddevices)
+	subparsers.add_parser('removeenddevices', parents = [common]).set_defaults(func = removeenddevices)
 	subparsers.add_parser('toggle', parents = [common]).set_defaults(func = toggle)
 	
 	cmd = subparsers.add_parser('connecthomenetwork', parents = [common])
