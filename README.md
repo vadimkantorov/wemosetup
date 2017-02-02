@@ -30,7 +30,7 @@ python wemosetup.py removeenddevices --ip 10.22.22.1 --port 49152
 # Toggle bubls
 python wemosetup.py toggle --ip 10.22.22.1 --port 49152
 
-# Pair with IFTTT (will ask to follow a web link and then executing JavaScript from DevTools console), imei should be an arbitrary number 
+# Pair with IFTTT (will ask to follow a web link and then execute JavaScript from DevTools console), imei may be an arbitrary number 
 python wemosetup.py ifttt --ip 10.22.22.1 --port 49152 --imei 123456789
 ```
 
