@@ -148,7 +148,7 @@ def getenddevices(device = None, host = None, port = None, list_type = 'PAIRED_L
 	end_devices_decoded = device.soap('bridge', 'GetEndDevices', 'DeviceLists', args = {'DevUDN' : device.udn, 'ReqListType' : list_type}).replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"')
 	end_devices = {str(elem.getElementsByTagName('DeviceID')[0].firstChild.data) : {'' : None, '1' : 1, '0' : 0}[elem.getElementsByTagName('CurrentState')[0].firstChild.data.split(',')[0]] for elem in xml.dom.minidom.parseString(end_devices_decoded).getElementsByTagName('DeviceInfo')} if end_devices_decoded != '0' else {}
 	if host != None and port != None:
-		print ('End devices of %s' if end_devices else 'No end devices of %s were found') % device
+		print ('End devices of %s:' if end_devices else 'No end devices of %s were found') % device
 		for device_id, state in sorted(end_devices.items()):
 			print ' - %s, state: %s' % (device_id, device.prettify_device_state(state))
 	return end_devices
