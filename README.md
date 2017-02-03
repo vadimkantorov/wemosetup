@@ -27,6 +27,9 @@ python wemosetup.py getenddevices --ip 10.22.22.1 --port 49152
 # Remove bulbs
 python wemosetup.py removeenddevices --ip 10.22.22.1 --port 49152
 
+# Reset bulbs (remove all bulbs and add all bulbs in one shot)
+python wemosetup.py resetenddevices --ip 10.22.22.1 --port 49152
+
 # Toggle bubls
 python wemosetup.py toggle --ip 10.22.22.1 --port 49152
 

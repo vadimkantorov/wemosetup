@@ -184,6 +184,10 @@ def removeenddevices(host, port, timeout = 10):
 	device.soap('bridge', 'CloseNetwork', args = {'DevUDN' : device.udn})
 	
 	print 'Bulbs removed: %s, bulbs left: %s' % (sorted(scanned_bulb_device_ids), sorted(paired_bulb_device_ids))
+
+def resetenddevices(host, port, timeout = 10):
+	removeenddevices(host, port, timeout = timeout)
+	addenddevices(host, port, timeout = timeout)
 	
 def toggle(host, port):
 	device = WemoDevice(host, port)
@@ -235,6 +239,7 @@ if __name__ == '__main__':
 	subparsers.add_parser('getenddevices', parents = [common]).set_defaults(func = getenddevices)
 	subparsers.add_parser('addenddevices', parents = [common]).set_defaults(func = addenddevices)
 	subparsers.add_parser('removeenddevices', parents = [common]).set_defaults(func = removeenddevices)
+	subparsers.add_parser('resetenddevices', parents = [common]).set_defaults(func = resetenddevices)
 	subparsers.add_parser('toggle', parents = [common]).set_defaults(func = toggle)
 	
 	cmd = subparsers.add_parser('connecthomenetwork', parents = [common])
