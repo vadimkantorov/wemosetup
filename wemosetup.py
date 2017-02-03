@@ -97,7 +97,7 @@ class WemoDevice(SsdpDevice):
 		return auth_code
 		
 	def prettify_device_state(self, state):
-		return {1 : 'on', 0 : 'off', None : 'unknown'}[state]
+		return 'on' if state == 1 else 'off' if state == 0 else 'unknown (%s)' % state
 
 def discover():
 	print ''
@@ -196,7 +196,7 @@ def toggle(host, port):
 			).replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
 		})
 	else:
-		new_binary_state = 1 - int(device.soap('basicevent', 'GetBinaryState', 'BinaryState'))
+		new_binary_state = 1 - int(device.soap('basicevent', 'GetBinaryState', 'BinaryState') == '1')
 		device.soap('basicevent', 'SetBinaryState', args = {'BinaryState' : new_binary_state})
 	
 	print '%s toggled to: %s' % (device, device.prettify_device_state(new_binary_state))
