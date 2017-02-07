@@ -185,7 +185,7 @@ def removeenddevices(host, port, timeout = 10):
 	
 	print 'Bulbs removed: %s, bulbs left: %s' % (sorted(scanned_bulb_device_ids), sorted(paired_bulb_device_ids))
 
-def resetenddevices(host, port, timeout = 10):
+def resetenddevices(host, port, timeout = 30):
 	removeenddevices(host, port, timeout = timeout)
 	addenddevices(host, port, timeout = timeout)
 	
