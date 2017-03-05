@@ -37,7 +37,7 @@ python wemosetup.py toggle --ip 10.22.22.1 --port 49152
 python wemosetup.py ifttt --ip 10.22.22.1 --port 49152 --imei 123456789
 ```
 
-# Reseting WeMo
+# Resetting WeMo
 WeMo devices are not very stable and may require resets of [bridges, switches](http://community.wemo.com/t5/WEMO-Application/WeMo-Resetting-the-Easy-Way/td-p/5016) and [bulbs](https://support.smartthings.com/hc/en-us/articles/204259040-Belkin-WeMo-LED-Bulb-F7C033-).
 
 # Dependencies
