@@ -100,9 +100,9 @@ class WemoDevice(SsdpDevice):
 		return 'on' if state == 1 else 'off' if state == 0 else 'unknown (%s)' % state
 
 def discover():
-	print ''
-	print 'Discovery of WeMo devices'
-	print ''
+	print()
+	print('Discovery of WeMo devices')
+	print()
 	
 	host_ports = sorted(set(WemoDevice.discover_devices() + [('10.22.22.1', str(port)) for port in range(49151, 49156)]))
 	discovered_devices = []
@@ -112,17 +112,17 @@ def discover():
 		except urllib2.URLError:
 			continue
 			
-	print 'Discovered:' if discovered_devices else 'No devices discovered'
+	print('Discovered:' if discovered_devices else 'No devices discovered')
 	for device in discovered_devices:
-		print ' - %s' % device
-	print ''
+		print(' - ' + device)
+	print()
 	return discovered_devices
 
 def connecthomenetwork(host, port, ssid, password, timeout = 10):
 	device = WemoDevice(host, port)
 	aps = [ap for ap in device.soap('WiFiSetup', 'GetApList', 'ApList').split('\n') if ap.startswith(ssid + '|')]
 	if len(aps) == 0:
-		print 'Could not find network "%s". Try again.' % ssid
+		print(f'Could not find network "{ssid}". Try again.')
 		return
 	elif len(aps) > 1:
 		print 'Discovered %d networks with SSID "%s", using the first available..."' % (len(aps), ssid)
@@ -141,16 +141,16 @@ def connecthomenetwork(host, port, ssid, password, timeout = 10):
 	
 	network_status = device.soap('WiFiSetup', 'GetNetworkStatus', 'NetworkStatus')
 	close_status = device.soap('WiFiSetup', 'CloseSetup', 'status')
-	print 'Device failed to connect to the network: (%s, %s). Try again.' % (connect_status, network_status) if network_status not in ['1', '3'] or close_status != 'success' else 'Device %s connected to network "%s"' % (device, ssid)
+	print(f'Device failed to connect to the network: ({connect_status}, {network_status}). Try again.') if network_status not in ['1', '3'] or close_status != 'success' else f'Device {device} connected to network "{ssid}"')
 	
 def getenddevices(device = None, host = None, port = None, list_type = 'PAIRED_LIST'):
 	device = device or WemoDevice(host, port)
 	end_devices_decoded = device.soap('bridge', 'GetEndDevices', 'DeviceLists', args = {'DevUDN' : device.udn, 'ReqListType' : list_type}).replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"')
 	end_devices = {str(elem.getElementsByTagName('DeviceID')[0].firstChild.data) : {'' : None, '1' : 1, '0' : 0}[elem.getElementsByTagName('CurrentState')[0].firstChild.data.split(',')[0]] for elem in xml.dom.minidom.parseString(end_devices_decoded).getElementsByTagName('DeviceInfo')} if end_devices_decoded != '0' else {}
 	if host != None and port != None:
-		print ('End devices of %s:' if end_devices else 'No end devices of %s were found') % device
+		print(f'End devices of {device}:' if end_devices else 'No end devices of {device} were found')
 		for device_id, state in sorted(end_devices.items()):
-			print ' - %s, state: %s' % (device_id, device.prettify_device_state(state))
+			print(' - {}, state: {}'.format(device_id, device.prettify_device_state(state)))
 	return end_devices
 		
 def addenddevices(host, port, timeout = 10):
@@ -183,7 +183,7 @@ def removeenddevices(host, port, timeout = 10):
 	paired_bulb_device_ids = getenddevices(device, list_type = 'PAIRED_LIST').keys()
 	device.soap('bridge', 'CloseNetwork', args = {'DevUDN' : device.udn})
 	
-	print 'Bulbs removed: %s, bulbs left: %s' % (sorted(scanned_bulb_device_ids), sorted(paired_bulb_device_ids))
+	print('Bulbs removed: {}, bulbs left: {}'.format(list(sorted(scanned_bulb_device_ids)), list(sorted(paired_bulb_device_ids))))
 
 def resetenddevices(host, port, timeout = 30):
 	removeenddevices(host, port, timeout = timeout)
@@ -203,7 +203,7 @@ def toggle(host, port):
 		new_binary_state = 1 - int(device.soap('basicevent', 'GetBinaryState', 'BinaryState') == '1')
 		device.soap('basicevent', 'SetBinaryState', args = {'BinaryState' : new_binary_state})
 	
-	print '%s toggled to: %s' % (device, device.prettify_device_state(new_binary_state))
+	print('{} toggled to: {}'.format(device, device.prettify_device_state(new_binary_state)))
 
 def ifttt(host, port, device_id):
 	device = WemoDevice(host, port)
@@ -212,20 +212,20 @@ def ifttt(host, port, device_id):
 	
 	home_id, private_key, remote_access_status = parse_xml(device.soap('remoteaccess', 'RemoteAccess', args = {'DeviceId' : device_id, 'DeviceName' : device_id, 'dst' : 0, 'HomeId' : '', 'MacAddr' : '', 'pluginprivateKey' : '', 'smartprivateKey' : '', 'smartUniqueId' : '', 'numSmartDev' : ''}), ['homeId', 'smartprivateKey', 'statusCode'])
 	if remote_access_status != 'S':
-		print error(remote_access_status)
+		print(error(remote_access_status))
 		return
 		
 	auth_code = device.generate_auth_code(device_id, private_key)
 	activation_code, generate_pin_status = parse_xml(urllib2.urlopen(urllib2.Request('https://api.xbcs.net:8443/apis/http/plugin/generatePin/%s/IFTTT' % home_id, headers = {'Content-Type' : 'application/xml', 'Authorization' : auth_code})).read(), ['activationCode', 'status'])
 	if generate_pin_status != '0':
-		print error(generate_pin_status)
+		print(error(generate_pin_status))
 		return
 	
-	print 'Navigate to the following address to complete pairing:'
-	print 'https://ifttt.com/wemo_activate?wemopin=%s&done_url=wemo://status=0' % activation_code
-	print ''
-	print 'and run the following JavaScript code when you get to the webpage that says you need to open it from the WeMo app:'
-	print 'document.getElementById("WeMoAppMobileData").innerHTML = JSON.stringify({uniqueId:"%s", homeId:"%s", signature:"%s"}); doSubmit(1);' % (device_id, home_id, auth_code)
+	print('Navigate to the following address to complete pairing:')
+	print('https://ifttt.com/wemo_activate?wemopin={activation_code}&done_url=wemo://status=0')
+	print()
+	print('and run the following JavaScript code when you get to the webpage that says you need to open it from the WeMo app:')
+	print('document.getElementById("WeMoAppMobileData").innerHTML = JSON.stringify({uniqueId:"%s", homeId:"%s", signature:"%s"}); doSubmit(1);' % (device_id, home_id, auth_code))
 
 if __name__ == '__main__':
 	common = argparse.ArgumentParser(add_help = False)
