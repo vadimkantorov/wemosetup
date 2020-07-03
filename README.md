@@ -13,35 +13,35 @@ I have tested it with WeMo Insight and WeMo Bridge.
 
 ```shell
 # Discover devices (with their IPs and ports)
-python wemosetup.py discover
+python3 wemosetup.py discover
 
 # Connect to home wi-fi
-python wemosetup.py connecthomenetwork --ip 10.22.22.1 --port 49152 --ssid <mywifinetworkname> --password <mywifinetworkpassword>
+python3 wemosetup.py connecthomenetwork --ip 10.22.22.1 --port 49152 --ssid <mywifinetworkname> --password <mywifinetworkpassword>
 
 # Add bulbs
-python wemosetup.py addenddevices --ip 10.22.22.1 --port 49152
+python3 wemosetup.py addenddevices --ip 10.22.22.1 --port 49152
 
 # List bulbs
-python wemosetup.py getenddevices --ip 10.22.22.1 --port 49152
+python3 wemosetup.py getenddevices --ip 10.22.22.1 --port 49152
 
 # Remove bulbs
-python wemosetup.py removeenddevices --ip 10.22.22.1 --port 49152
+python3 wemosetup.py removeenddevices --ip 10.22.22.1 --port 49152
 
 # Reset bulbs (remove all bulbs and add all bulbs in one shot)
-python wemosetup.py resetenddevices --ip 10.22.22.1 --port 49152
+python3 wemosetup.py resetenddevices --ip 10.22.22.1 --port 49152
 
 # Toggle bubls
-python wemosetup.py toggle --ip 10.22.22.1 --port 49152
+python3 wemosetup.py toggle --ip 10.22.22.1 --port 49152
 
 # Pair with IFTTT (will ask to follow a web link and then execute JavaScript from DevTools console), imei may be an arbitrary number 
-python wemosetup.py ifttt --ip 10.22.22.1 --port 49152 --imei 123456789
+python3 wemosetup.py ifttt --ip 10.22.22.1 --port 49152 --imei 123456789
 ```
 
 # Resetting WeMo
 WeMo devices are not very stable and may require resets of [bridges, switches](http://community.wemo.com/t5/WEMO-Application/WeMo-Resetting-the-Easy-Way/td-p/5016) and [bulbs](https://support.smartthings.com/hc/en-us/articles/204259040-Belkin-WeMo-LED-Bulb-F7C033-).
 
 # Dependencies
-- Python 2.7
+- Python 3
 - openssl (or openssl.exe) binary discoverable in system $PATH
 
 # Credits and references
