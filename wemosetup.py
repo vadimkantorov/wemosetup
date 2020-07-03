@@ -22,20 +22,20 @@ class SsdpDevice:
 		
 	def soap(self, service_name, method_name, response_tag = None, args = {}, timeout = 30):
 		service_type, control_url = [(service_type, control_url) for service_type, control_url in self.services.items() if service_name in service_type][0]
-		service_url = 'http://%s:%s/' % self.host_port + control_url.lstrip('/')
-		request_body = '''<?xml version="1.0" encoding="utf-8"?>
+		service_url = 'http://{}:{}/'.format(*self.host_port) + control_url.lstrip('/')
+		request_body = f'''<?xml version="1.0" encoding="utf-8"?>
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
  <s:Body>
-  <u:%s xmlns:u="%s">
-   %s
-  </u:%s>
+  <u:{method_name} xmlns:u="{service_type}">
+   ''' + ''.join(itertools.starmap('<{0}>{1}</{0}>'.format, args.items())) + f'''
+  </u:{method_name}>
  </s:Body>
-</s:Envelope>''' % (method_name, service_type, ''.join(itertools.starmap('<{0}>{1}</{0}>'.format, args.items())), method_name)
+</s:Envelope>'''
 		request_headers = {
 			'Content-Type' : 'text/xml; charset="utf-8"',
-			'SOAPACTION' : '"%s#%s"' % (service_type, method_name),
+			'SOAPACTION' : f'"{service_type}#{method_name}"',
 			'Content-Length': len(request_body),
-			'HOST' : '%s:%s' % self.host_port
+			'HOST' : '{}:{}'.format(*self.host_port)
 		}
 		response = urllib2.urlopen(urllib2.Request(service_url, request_body, headers = request_headers), timeout = timeout).read()
 		if response_tag:
@@ -70,11 +70,11 @@ class SsdpDevice:
 	    return setup_xml_urls
 		
 	def __str__(self):
-		return '%s (%s:%s)' % ((self.friendly_name,) + self.host_port)
+		return '{} ({}:{})'.format(self.friendly_name, *self.host_port)
 
 class WemoDevice(SsdpDevice):
 	def __init__(self, host, port):
-		SsdpDevice.__init__(self, 'http://%s:%s/setup.xml' % (host, port))
+		SsdpDevice.__init__(self, f'http://{host}:{port}/setup.xml')
 	
 	@staticmethod
 	def discover_devices(*args, **kwargs):
@@ -92,8 +92,8 @@ class WemoDevice(SsdpDevice):
 		
 	def generate_auth_code(self, device_id, private_key):
 		expiration_time = int(time.time()) + 200
-		stdout, stderr = subprocess.Popen(['openssl', 'sha1', '-binary', '-hmac', private_key], stdin = subprocess.PIPE, stdout = subprocess.PIPE).communicate('%s\n\n%s' % (device_id, expiration_time))
-		auth_code = "SDU %s:%s:%s" % (device_id, stdout.encode('base64').strip(), expiration_time)
+		stdout, stderr = subprocess.Popen(['openssl', 'sha1', '-binary', '-hmac', private_key], stdin = subprocess.PIPE, stdout = subprocess.PIPE).communicate(f'{device_id}\n\n{expiration_time}')
+		auth_code = "SDU {}:{}:{}".format(device_id, stdout.encode('base64').strip(), expiration_time)
 		return auth_code
 		
 	def prettify_device_state(self, state):
@@ -125,7 +125,7 @@ def connecthomenetwork(host, port, ssid, password, timeout = 10):
 		print(f'Could not find network "{ssid}". Try again.')
 		return
 	elif len(aps) > 1:
-		print 'Discovered %d networks with SSID "%s", using the first available..."' % (len(aps), ssid)
+		print(f'Discovered {len(aps)} networks with SSID "{ssid}", using the first available..."')
 		
 	channel, auth_mode, encryption_mode = re.match('.+\|(.+)\|.+\|(.+)/(.+),', aps[0]).groups()
 	meta_array = device.soap('metainfo', 'GetMetaInfo', 'MetaInfo').split('|')
@@ -167,7 +167,7 @@ def addenddevices(host, port, timeout = 10):
 	paired_bulb_device_ids = getenddevices(device, list_type = 'PAIRED_LIST').keys()
 	device.soap('bridge', 'CloseNetwork', args = {'DevUDN' : device.udn})
 	
-	print 'Paired bulbs: %s' % sorted(set(scanned_bulb_device_ids) & set(paired_bulb_device_ids))
+	print('Paired bulbs: ', list(sorted(set(scanned_bulb_device_ids) & set(paired_bulb_device_ids))))
 	
 def removeenddevices(host, port, timeout = 10):
 	device = WemoDevice(host, port)
@@ -183,7 +183,7 @@ def removeenddevices(host, port, timeout = 10):
 	paired_bulb_device_ids = getenddevices(device, list_type = 'PAIRED_LIST').keys()
 	device.soap('bridge', 'CloseNetwork', args = {'DevUDN' : device.udn})
 	
-	print('Bulbs removed: {}, bulbs left: {}'.format(list(sorted(scanned_bulb_device_ids)), list(sorted(paired_bulb_device_ids))))
+	print('Bulbs removed:', list(sorted(scanned_bulb_device_ids)), 'bulbs left:', list(sorted(paired_bulb_device_ids)))
 
 def resetenddevices(host, port, timeout = 30):
 	removeenddevices(host, port, timeout = timeout)
@@ -196,7 +196,7 @@ def toggle(host, port):
 		new_binary_state = 1 - int(bulbs.items()[0][1] or 0)
 		device.soap('bridge', 'SetDeviceStatus', args = {'DeviceStatusList' : 
 			''.join(['<?xml version="1.0" encoding="utf-8"?>'] +
-				['''<DeviceStatus><IsGroupAction>NO</IsGroupAction><DeviceID available="YES">%s</DeviceID><CapabilityID>%s</CapabilityID><CapabilityValue>%s</CapabilityValue></DeviceStatus>''' % (bulb_device_id, 10006, new_binary_state) for bulb_device_id in bulbs.keys()]
+				['''<DeviceStatus><IsGroupAction>NO</IsGroupAction><DeviceID available="YES">{}</DeviceID><CapabilityID>{}</CapabilityID><CapabilityValue>{}</CapabilityValue></DeviceStatus>'''.format(bulb_device_id, 10006, new_binary_state) for bulb_device_id in bulbs.keys()]
 			).replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
 		})
 	else:
@@ -208,7 +208,7 @@ def toggle(host, port):
 def ifttt(host, port, device_id):
 	device = WemoDevice(host, port)
 	parse_xml = lambda resp, fields: [doc.getElementsByTagName(field)[0].firstChild.data for doc in [xml.dom.minidom.parseString(resp)] for field in fields]
-	error = lambda status: '%s failed to enable IFTTT: status code %s' % (device, status)
+	error = lambda status: f'{device} failed to enable IFTTT: status code {status}'
 	
 	home_id, private_key, remote_access_status = parse_xml(device.soap('remoteaccess', 'RemoteAccess', args = {'DeviceId' : device_id, 'DeviceName' : device_id, 'dst' : 0, 'HomeId' : '', 'MacAddr' : '', 'pluginprivateKey' : '', 'smartprivateKey' : '', 'smartUniqueId' : '', 'numSmartDev' : ''}), ['homeId', 'smartprivateKey', 'statusCode'])
 	if remote_access_status != 'S':
@@ -216,7 +216,7 @@ def ifttt(host, port, device_id):
 		return
 		
 	auth_code = device.generate_auth_code(device_id, private_key)
-	activation_code, generate_pin_status = parse_xml(urllib2.urlopen(urllib2.Request('https://api.xbcs.net:8443/apis/http/plugin/generatePin/%s/IFTTT' % home_id, headers = {'Content-Type' : 'application/xml', 'Authorization' : auth_code})).read(), ['activationCode', 'status'])
+	activation_code, generate_pin_status = parse_xml(urllib2.urlopen(urllib2.Request(f'https://api.xbcs.net:8443/apis/http/plugin/generatePin/{home_id}/IFTTT', headers = {'Content-Type' : 'application/xml', 'Authorization' : auth_code})).read(), ['activationCode', 'status'])
 	if generate_pin_status != '0':
 		print(error(generate_pin_status))
 		return
@@ -225,7 +225,7 @@ def ifttt(host, port, device_id):
 	print('https://ifttt.com/wemo_activate?wemopin={activation_code}&done_url=wemo://status=0')
 	print()
 	print('and run the following JavaScript code when you get to the webpage that says you need to open it from the WeMo app:')
-	print('document.getElementById("WeMoAppMobileData").innerHTML = JSON.stringify({uniqueId:"%s", homeId:"%s", signature:"%s"}); doSubmit(1);' % (device_id, home_id, auth_code))
+	print('document.getElementById("WeMoAppMobileData").innerHTML = JSON.stringify({' + f'uniqueId:"{device_id}", homeId:"{home_id}", signature:"{auth_code}"' + '}); doSubmit(1);')
 
 if __name__ == '__main__':
 	common = argparse.ArgumentParser(add_help = False)
