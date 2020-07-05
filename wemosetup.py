@@ -1,15 +1,16 @@
-import re
 import os
+import io
+import re
 import sys
 import time
+import base64
 import argparse
 import subprocess
-import urllib.request
 import itertools
-import xml.dom.minidom
-import httplib
 import socket
-import StringIO
+import httplib
+import urllib.request
+import xml.dom.minidom
 
 class SsdpDevice:
 	def __init__(self, setup_xml_url, timeout = 5):
@@ -60,7 +61,7 @@ class SsdpDevice:
 	        sock.sendto(message.format(*host_port, service_type = service_type, mx = mx), host_port)
 	        while True:
 	            try:
-	            	fake_socket = StringIO.StringIO(sock.recv(1024))
+	            	fake_socket = io.StringIO(sock.recv(1024))
 	            	fake_socket.makefile = lambda *args, **kwargs: fake_socket
 	            	response = httplib.HTTPResponse(fake_socket)
 	            	response.begin()
@@ -86,14 +87,14 @@ class WemoDevice(SsdpDevice):
 		assert len(salt) == 8 and len(iv) == 16
 
 		stdout, stderr = subprocess.Popen(['openssl', 'enc', '-aes-128-cbc', '-md', 'md5', '-S', salt.encode('hex'), '-iv', iv.encode('hex'), '-pass', 'pass:' + keydata], stdin = subprocess.PIPE, stdout = subprocess.PIPE).communicate(password)
-		encrypted_password = stdout[16:].encode('base64') # removing 16byte magic and salt prefix inserted by OpenSSL
+		encrypted_password = base64.b64encode(stdout[16:]) # removing 16byte magic and salt prefix inserted by OpenSSL
 		encrypted_password += hex(len(encrypted_password))[2:] + ('0' if len(password) < 16 else '') + hex(len(password))[2:]
 		return encrypted_password
 		
 	def generate_auth_code(self, device_id, private_key):
 		expiration_time = int(time.time()) + 200
 		stdout, stderr = subprocess.Popen(['openssl', 'sha1', '-binary', '-hmac', private_key], stdin = subprocess.PIPE, stdout = subprocess.PIPE).communicate(f'{device_id}\n\n{expiration_time}')
-		auth_code = "SDU {}:{}:{}".format(device_id, stdout.encode('base64').strip(), expiration_time)
+		auth_code = "SDU {}:{}:{}".format(device_id, base64.b64encode(stdout).strip(), expiration_time)
 		return auth_code
 		
 	def prettify_device_state(self, state):
