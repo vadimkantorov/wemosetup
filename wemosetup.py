@@ -104,12 +104,12 @@ def discover():
 	print('Discovery of WeMo devices')
 	print()
 	
-	host_ports = sorted(set(WemoDevice.discover_devices() + [('10.22.22.1', str(port)) for port in range(49151, 49156)]))
+	host_ports = set(WemoDevice.discover_devices() + [('10.22.22.1', str(port)) for port in range(49151, 49156)])
 	discovered_devices = []
-	for host_port in host_ports:
+	for host, port in sorted(host_ports):
 		try:
-			discovered_devices.append(WemoDevice(*host_port))
-		except urllib2.URLError:
+			discovered_devices.append(WemoDevice(host, port))
+		except urllib.URLError:
 			continue
 			
 	print('Discovered:' if discovered_devices else 'No devices discovered')
@@ -167,7 +167,7 @@ def addenddevices(host, port, timeout = 10):
 	paired_bulb_device_ids = getenddevices(device, list_type = 'PAIRED_LIST').keys()
 	device.soap('bridge', 'CloseNetwork', args = {'DevUDN' : device.udn})
 	
-	print('Paired bulbs: ', list(sorted(set(scanned_bulb_device_ids) & set(paired_bulb_device_ids))))
+	print('Paired bulbs: ', sorted(set(scanned_bulb_device_ids) & set(paired_bulb_device_ids)))
 	
 def removeenddevices(host, port, timeout = 10):
 	device = WemoDevice(host, port)
@@ -183,7 +183,7 @@ def removeenddevices(host, port, timeout = 10):
 	paired_bulb_device_ids = getenddevices(device, list_type = 'PAIRED_LIST').keys()
 	device.soap('bridge', 'CloseNetwork', args = {'DevUDN' : device.udn})
 	
-	print('Bulbs removed:', list(sorted(scanned_bulb_device_ids)), 'bulbs left:', list(sorted(paired_bulb_device_ids)))
+	print('Bulbs removed:', sorted(scanned_bulb_device_ids), 'bulbs left:', sorted(paired_bulb_device_ids))
 
 def resetenddevices(host, port, timeout = 30):
 	removeenddevices(host, port, timeout = timeout)
