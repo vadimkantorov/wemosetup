@@ -14,7 +14,7 @@ import xml.dom.minidom
 
 class SsdpDevice:
 	def __init__(self, setup_xml_url, timeout = 5):
-		setup_xml_response = urllib.request.urlopen(setup_xml_url, timeout = timeout).read()
+		setup_xml_response = urllib.request.urlopen(setup_xml_url, timeout = timeout).read().decode()
 		self.host_port = re.search('//(.+):(\d+)/', setup_xml_url).groups()
 		parsed_xml = xml.dom.minidom.parseString(setup_xml_response)
 		self.friendly_name = parsed_xml.getElementsByTagName('friendlyName')[0].firstChild.data
@@ -38,7 +38,7 @@ class SsdpDevice:
 			'Content-Length': len(request_body),
 			'HOST' : '{}:{}'.format(*self.host_port)
 		}
-		response = urllib.request.urlopen(urllib.request.Request(service_url, request_body, headers = request_headers), timeout = timeout).read()
+		response = urllib.request.urlopen(urllib.request.Request(service_url, request_body, headers = request_headers), timeout = timeout).read().decode()
 		if response_tag:
 			response = xml.dom.minidom.parseString(response).getElementsByTagName(response_tag)[0].firstChild.data
 		return response
@@ -217,7 +217,7 @@ def ifttt(host, port, device_id):
 		return
 		
 	auth_code = device.generate_auth_code(device_id, private_key)
-	activation_code, generate_pin_status = parse_xml(urllib.request.urlopen(urllib.request.Request(f'https://api.xbcs.net:8443/apis/http/plugin/generatePin/{home_id}/IFTTT', headers = {'Content-Type' : 'application/xml', 'Authorization' : auth_code})).read(), ['activationCode', 'status'])
+	activation_code, generate_pin_status = parse_xml(urllib.request.urlopen(urllib.request.Request(f'https://api.xbcs.net:8443/apis/http/plugin/generatePin/{home_id}/IFTTT', headers = {'Content-Type' : 'application/xml', 'Authorization' : auth_code})).read().decode(), ['activationCode', 'status'])
 	if generate_pin_status != '0':
 		print(error(generate_pin_status))
 		return
