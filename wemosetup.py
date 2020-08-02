@@ -142,7 +142,7 @@ def connecthomenetwork(host, port, ssid, password, timeout = 10):
 	
 	network_status = device.soap('WiFiSetup', 'GetNetworkStatus', 'NetworkStatus')
 	close_status = device.soap('WiFiSetup', 'CloseSetup', 'status')
-	print(f'Device failed to connect to the network: ({connect_status}, {network_status}). Try again.') if network_status not in ['1', '3'] or close_status != 'success' else f'Device {device} connected to network "{ssid}"')
+	print(f'Device failed to connect to the network: ({connect_status}, {network_status}). Try again.' if network_status not in ['1', '3'] or close_status != 'success' else f'Device {device} connected to network "{ssid}"')
 	
 def getenddevices(device = None, host = None, port = None, list_type = 'PAIRED_LIST'):
 	device = device or WemoDevice(host, port)
