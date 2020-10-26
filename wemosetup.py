@@ -8,14 +8,14 @@ import argparse
 import subprocess
 import itertools
 import socket
-import httplib
+import http.client
 import urllib.request
 import xml.dom.minidom
 
 class SsdpDevice:
 	def __init__(self, setup_xml_url, timeout = 5):
 		setup_xml_response = urllib.request.urlopen(setup_xml_url, timeout = timeout).read().decode()
-		self.host_port = re.search('//(.+):(\d+)/', setup_xml_url).groups()
+		self.host_port = re.search(r'//(.+):(\d+)/', setup_xml_url).groups()
 		parsed_xml = xml.dom.minidom.parseString(setup_xml_response)
 		self.friendly_name = parsed_xml.getElementsByTagName('friendlyName')[0].firstChild.data
 		self.udn = parsed_xml.getElementsByTagName('UDN')[0].firstChild.data
@@ -38,7 +38,7 @@ class SsdpDevice:
 			'Content-Length': len(request_body),
 			'HOST' : '{}:{}'.format(*self.host_port)
 		}
-		response = urllib.request.urlopen(urllib.request.Request(service_url, request_body, headers = request_headers), timeout = timeout).read().decode()
+		response = urllib.request.urlopen(urllib.request.Request(service_url, request_body.encode(), headers = request_headers), timeout = timeout).read().decode()
 		if response_tag:
 			response = xml.dom.minidom.parseString(response).getElementsByTagName(response_tag)[0].firstChild.data
 		return response
@@ -58,12 +58,12 @@ class SsdpDevice:
 	        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 	        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
-	        sock.sendto(message.format(*host_port, service_type = service_type, mx = mx), host_port)
+	        sock.sendto(message.format(*host_port, service_type = service_type, mx = mx).encode(), host_port)
 	        while True:
 	            try:
-	            	fake_socket = io.StringIO(sock.recv(1024))
+	            	fake_socket = io.BytesIO(sock.recv(1024))
 	            	fake_socket.makefile = lambda *args, **kwargs: fake_socket
-	            	response = httplib.HTTPResponse(fake_socket)
+	            	response = http.client.HTTPResponse(fake_socket)
 	            	response.begin()
 	            	setup_xml_urls.append(response.getheader('location'))
 	            except socket.timeout:
@@ -79,7 +79,7 @@ class WemoDevice(SsdpDevice):
 	
 	@staticmethod
 	def discover_devices(*args, **kwargs):
-		return [re.search('//(.+):(\d+)/', setup_xml_url).groups() for setup_xml_url in SsdpDevice.discover_devices(service_type = 'urn:Belkin:service:basicevent:1', *args, **kwargs)]
+		return [re.search(r'//(.+):(\d+)/', setup_xml_url).groups() for setup_xml_url in SsdpDevice.discover_devices(service_type = 'urn:Belkin:service:basicevent:1', *args, **kwargs)]
 		
 	def encrypt_wifi_password(self, password, meta_array):
 		keydata = meta_array[0][0:6] + meta_array[1] + meta_array[0][6:12]
@@ -110,12 +110,12 @@ def discover():
 	for host, port in sorted(host_ports):
 		try:
 			discovered_devices.append(WemoDevice(host, port))
-		except urllib.URLError:
+		except urllib.error.URLError:
 			continue
 			
 	print('Discovered:' if discovered_devices else 'No devices discovered')
 	for device in discovered_devices:
-		print(' - ' + device)
+		print(' - ' + str(device))
 	print()
 	return discovered_devices
 
@@ -128,7 +128,7 @@ def connecthomenetwork(host, port, ssid, password, timeout = 10):
 	elif len(aps) > 1:
 		print(f'Discovered {len(aps)} networks with SSID "{ssid}", using the first available..."')
 		
-	channel, auth_mode, encryption_mode = re.match('.+\|(.+)\|.+\|(.+)/(.+),', aps[0]).groups()
+	channel, auth_mode, encryption_mode = re.match(r'.+\|(.+)\|.+\|(.+)/(.+),', aps[0]).groups()
 	meta_array = device.soap('metainfo', 'GetMetaInfo', 'MetaInfo').split('|')
 	connect_status = device.soap('WiFiSetup', 'ConnectHomeNetwork', 'PairingStatus', args = {
 		'ssid' : ssid,
@@ -223,7 +223,7 @@ def ifttt(host, port, device_id):
 		return
 	
 	print('Navigate to the following address to complete pairing:')
-	print('https://ifttt.com/wemo_activate?wemopin={activation_code}&done_url=wemo://status=0')
+	print(f'https://ifttt.com/wemo_activate?wemopin={activation_code}&done_url=wemo://status=0')
 	print()
 	print('and run the following JavaScript code when you get to the webpage that says you need to open it from the WeMo app:')
 	print('document.getElementById("WeMoAppMobileData").innerHTML = JSON.stringify({' + f'uniqueId:"{device_id}", homeId:"{home_id}", signature:"{auth_code}"' + '}); doSubmit(1);')
