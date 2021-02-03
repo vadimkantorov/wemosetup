@@ -98,7 +98,7 @@ class WemoDevice(SsdpDevice):
 		return auth_code
 		
 	def prettify_device_state(self, state):
-		return 'on' if state == 1 else 'off' if state == 0 else 'unknown (%s)' % state
+		return 'on' if state == 1 else 'off' if state == 0 else f'unknown ({state})'
 
 def discover():
 	print()
