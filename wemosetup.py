@@ -11,7 +11,7 @@ import socket
 import http.client
 import urllib.request
 import xml.dom.minidom
-import binascii  # Import für hexlify
+import binascii
 
 class SsdpDevice:
 	def __init__(self, setup_xml_url, timeout=5):
