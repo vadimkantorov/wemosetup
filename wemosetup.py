@@ -11,86 +11,82 @@ import socket
 import http.client
 import urllib.request
 import xml.dom.minidom
+import binascii  # Import für hexlify
 
 class SsdpDevice:
-	def __init__(self, setup_xml_url, timeout = 5):
-		setup_xml_response = urllib.request.urlopen(setup_xml_url, timeout = timeout).read().decode()
+	def __init__(self, setup_xml_url, timeout=5):
+		setup_xml_response = urllib.request.urlopen(setup_xml_url, timeout=timeout).read().decode()
 		self.host_port = re.search(r'//(.+):(\d+)/', setup_xml_url).groups()
 		parsed_xml = xml.dom.minidom.parseString(setup_xml_response)
 		self.friendly_name = parsed_xml.getElementsByTagName('friendlyName')[0].firstChild.data
 		self.udn = parsed_xml.getElementsByTagName('UDN')[0].firstChild.data
-		self.services = {elem.getElementsByTagName('serviceType')[0].firstChild.data : elem.getElementsByTagName('controlURL')[0].firstChild.data for elem in parsed_xml.getElementsByTagName('service')}
-		
-	def soap(self, service_name, method_name, response_tag = None, args = {}, timeout = 30):
+		self.services = {elem.getElementsByTagName('serviceType')[0].firstChild.data: elem.getElementsByTagName('controlURL')[0].firstChild.data for elem in parsed_xml.getElementsByTagName('service')}
+
+	def soap(self, service_name, method_name, response_tag=None, args={}, timeout=30):
 		service_type, control_url = [(service_type, control_url) for service_type, control_url in self.services.items() if service_name in service_type][0]
 		service_url = 'http://{}:{}/'.format(*self.host_port) + control_url.lstrip('/')
-		request_body = f'''<?xml version="1.0" encoding="utf-8"?>
-<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
- <s:Body>
-  <u:{method_name} xmlns:u="{service_type}">
-   ''' + ''.join(itertools.starmap('<{0}>{1}</{0}>'.format, args.items())) + f'''
-  </u:{method_name}>
- </s:Body>
-</s:Envelope>'''
+		request_body = f'''<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"> <s:Body>  <u:{method_name} xmlns:u="{service_type}">   ''' + ''.join(itertools.starmap('<{0}>{1}</{0}>'.format, args.items())) + f'''  </u:{method_name}> </s:Body></s:Envelope>'''
 		request_headers = {
-			'Content-Type' : 'text/xml; charset="utf-8"',
-			'SOAPACTION' : f'"{service_type}#{method_name}"',
+			'Content-Type': 'text/xml; charset="utf-8"',
+			'SOAPACTION': f'"{service_type}#{method_name}"',
 			'Content-Length': len(request_body),
-			'HOST' : '{}:{}'.format(*self.host_port)
+			'HOST': '{}:{}'.format(*self.host_port)
 		}
-		response = urllib.request.urlopen(urllib.request.Request(service_url, request_body.encode(), headers = request_headers), timeout = timeout).read().decode()
+		response = urllib.request.urlopen(urllib.request.Request(service_url, request_body.encode(), headers=request_headers), timeout=timeout).read().decode()
 		if response_tag:
 			response = xml.dom.minidom.parseString(response).getElementsByTagName(response_tag)[0].firstChild.data
 		return response
-		
+
 	@staticmethod
-	def discover_devices(service_type, timeout = 5, retries = 1, mx = 3):
-	    host_port = ("239.255.255.250", 1900)
-	    message = "\r\n".join([
-	        'M-SEARCH * HTTP/1.1',
-	        'HOST: {0}:{1}',
-	        'MAN: "ssdp:discover"',
-	        'ST: {service_type}','MX: {mx}','',''])
-	    socket.setdefaulttimeout(timeout)
-	    
-	    setup_xml_urls = []
-	    for _ in range(retries):
-	        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-	        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
-	        sock.sendto(message.format(*host_port, service_type = service_type, mx = mx).encode(), host_port)
-	        while True:
-	            try:
-	            	fake_socket = io.BytesIO(sock.recv(1024))
-	            	fake_socket.makefile = lambda *args, **kwargs: fake_socket
-	            	response = http.client.HTTPResponse(fake_socket)
-	            	response.begin()
-	            	setup_xml_urls.append(response.getheader('location'))
-	            except socket.timeout:
-	                break
-	    return setup_xml_urls
-		
+	def discover_devices(service_type, timeout=5, retries=1, mx=3):
+		host_port = ("239.255.255.250", 1900)
+		message = "\r\n".join([
+			'M-SEARCH * HTTP/1.1',
+			'HOST: {0}:{1}',
+			'MAN: "ssdp:discover"',
+			'ST: {service_type}',
+			'MX: {mx}', '', ''
+		])
+		socket.setdefaulttimeout(timeout)
+
+		setup_xml_urls = []
+		for _ in range(retries):
+			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+			sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+			sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+			sock.sendto(message.format(*host_port, service_type=service_type, mx=mx).encode(), host_port)
+			while True:
+				try:
+					fake_socket = io.BytesIO(sock.recv(1024))
+					fake_socket.makefile = lambda *args, **kwargs: fake_socket
+					response = http.client.HTTPResponse(fake_socket)
+					response.begin()
+					setup_xml_urls.append(response.getheader('location'))
+				except socket.timeout:
+					break
+		return setup_xml_urls
+
 	def __str__(self):
 		return '{} ({}:{})'.format(self.friendly_name, *self.host_port)
+
 
 class WemoDevice(SsdpDevice):
 	def __init__(self, host, port):
 		SsdpDevice.__init__(self, f'http://{host}:{port}/setup.xml')
-	
+
 	@staticmethod
 	def discover_devices(*args, **kwargs):
-		return [re.search(r'//(.+):(\d+)/', setup_xml_url).groups() for setup_xml_url in SsdpDevice.discover_devices(service_type = 'urn:Belkin:service:basicevent:1', *args, **kwargs)]
-		
+		return [re.search(r'//(.+):(\d+)/', setup_xml_url).groups() for setup_xml_url in SsdpDevice.discover_devices(service_type='urn:Belkin:service:basicevent:1', *args, **kwargs)]
+
 	def encrypt_wifi_password(self, password, meta_array):
 		keydata = meta_array[0][0:6] + meta_array[1] + meta_array[0][6:12]
 		salt, iv = keydata[0:8], keydata[0:16]
 		assert len(salt) == 8 and len(iv) == 16
-
-		stdout, stderr = subprocess.Popen(['openssl', 'enc', '-aes-128-cbc', '-md', 'md5', '-S', salt.encode('hex'), '-iv', iv.encode('hex'), '-pass', 'pass:' + keydata], stdin = subprocess.PIPE, stdout = subprocess.PIPE).communicate(password)
-		encrypted_password = base64.b64encode(stdout[16:]) # removing 16byte magic and salt prefix inserted by OpenSSL
-		encrypted_password += hex(len(encrypted_password))[2:] + ('0' if len(password) < 16 else '') + hex(len(password))[2:]
+		stdout, stderr = subprocess.Popen(['openssl', 'enc', '-aes-128-cbc', '-md', 'md5', '-S', salt.encode('utf-8').hex(), '-iv', iv.encode('utf-8').hex(), '-pass', 'pass:' + keydata], stdin=subprocess.PIPE, stdout=subprocess.PIPE).communicate(password.encode())
+		encrypted_password = base64.b64encode(stdout[16:])  # removing 16byte magic and salt prefix inserted by OpenSSL
+		encrypted_password += (len(encrypted_password).to_bytes(1, 'big')) + (b'0' if len(password) < 16 else b'') + (len(password).to_bytes(1, 'big'))
 		return encrypted_password
-		
+
 	def generate_auth_code(self, device_id, private_key):
 		expiration_time = int(time.time()) + 200
 		stdout, stderr = subprocess.Popen(['openssl', 'sha1', '-binary', '-hmac', private_key], stdin = subprocess.PIPE, stdout = subprocess.PIPE).communicate(f'{device_id}\n\n{expiration_time}')
